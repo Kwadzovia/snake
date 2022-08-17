@@ -56,4 +56,4 @@ dkms.conf
 compile_commands.json
 Core/Src/Backup/
 Core/Inc/Backup/
-
+*.lst
