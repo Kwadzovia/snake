@@ -25,7 +25,7 @@ HAL_StatusTypeDef WriteRegister(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_
   return HAL_SPI_Transmit(hspi, pData, Size, HAL_MAX_DELAY);
 }
 
-HAL_StatusTypeDef MAX7219_init(MAX7219 * dev, SPI_HandleTypeDef* spiHandle)
+HAL_StatusTypeDef MAX7219_init(MAX7219 * dev, SPI_HandleTypeDef * spiHandle)
 {
   MAX7219_shutdown(dev);
   MAX7219_setIntensity(dev,MAX7219_DEFAULT_INTENSITY);
@@ -74,9 +74,12 @@ HAL_StatusTypeDef MAX7219_setRow(MAX7219 * dev, uint8_t row, uint8_t value)
 {
   if(row > 0 && row <= 8)
   {
+    dev->rowMatrix[row] = value;
     uint8_t scanVal[2] = {value,row};
     return WriteRegister(dev->spiHandle, scanVal, sizeof(scanVal));
-  } else {
+  }
+  else
+  {
     return HAL_ERROR;
   }
 }
