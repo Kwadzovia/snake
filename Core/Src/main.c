@@ -20,6 +20,8 @@
 #include "main.h"
 #include "adc.h"
 #include "spi.h"
+#include "stm32f4xx_hal.h"
+#include "tim.h"
 #include "usart.h"
 #include "gpio.h"
 
@@ -90,17 +92,27 @@ int main(void)
   MX_ADC1_Init();
   MX_SPI2_Init();
   MX_USART2_UART_Init();
+  MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
   MAX7219 segmentDev;
   MAX7219_init(&segmentDev, &hspi2);
-  MAX7219_setRow(&segmentDev,4,0b00111100);
-
   /* USER CODE END 2 */
-  
+
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
+    for(int row = 1; row <= MAX7219_ALL_ROWS; row++)
+    {
+      for(int col = 1; col <= MAX7219_ALL_ROWS; col++)
+      {
+        MAX7219_setSegment(&segmentDev, row, col);
+        HAL_Delay(50);
+      }
+      MAX7219_clearRow(&segmentDev, row);
+    }
+
+
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */

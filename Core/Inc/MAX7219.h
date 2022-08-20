@@ -6,15 +6,18 @@
 #include "stm32f4xx_hal_def.h"
 
 /* --------------------- Defines --------------------- */
-#define MAX7219_DEFAULT_INTENSITY 0x9
-#define MAX7219_DEFAULT_SCAN_LIMIT 0x7
+#define MAX7219_DEFAULT_INTENSITY 0x09
+#define MAX7219_DEFAULT_SCAN_LIMIT 0x07
+
+#define MAX7219_ALL_ROWS 0x08
+#define MAX7219_FULL_INTENSITY 0x0F
 
 /* --------------------- Registers --------------------- */
-#define MAX7219_DECODE_MODE         0x9
-#define MAX7219_INTENSITY           0xA
-#define MAX7219_SCAN_LIMIT          0xB
-#define MAX7219_SHUTDOWN_REGISTER   0xC
-#define MAX7219_DISPLAY_TEST        0xF
+#define MAX7219_DECODE_MODE         0x09
+#define MAX7219_INTENSITY           0x0A
+#define MAX7219_SCAN_LIMIT          0x0B
+#define MAX7219_SHUTDOWN_REGISTER   0x0C
+#define MAX7219_DISPLAY_TEST        0x0F
 
 /* --------------------- Prototypes --------------------- */
 typedef struct 
@@ -26,14 +29,8 @@ typedef struct
 } MAX7219;
 
 HAL_StatusTypeDef MAX7219_init(MAX7219 * dev, SPI_HandleTypeDef * spiHandle);
-HAL_StatusTypeDef MAX7219_setIntensity(MAX7219 * dev, uint8_t intensity);
-HAL_StatusTypeDef MAX7219_setScanLimit(MAX7219 * dev, uint8_t scanLimit);
-HAL_StatusTypeDef MAX7219_shutdown(MAX7219 * dev);
-HAL_StatusTypeDef MAX7219_wake(MAX7219 * dev);
-HAL_StatusTypeDef MAX7219_enable_displayTest(MAX7219 * dev);
-HAL_StatusTypeDef MAX7219_disable_displayTest(MAX7219 * dev);
-HAL_StatusTypeDef MAX7219_setRow(MAX7219 * dev, uint8_t row, uint8_t value);
+HAL_StatusTypeDef MAX7219_setSegment(MAX7219 * dev, uint8_t row, uint8_t value);
+HAL_StatusTypeDef MAX7219_clearRow(MAX7219 * dev, uint8_t row);
+HAL_StatusTypeDef MAX7219_setRow(MAX7219 * dev, uint8_t row);
 
-HAL_StatusTypeDef ReadRegisters(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size);
-HAL_StatusTypeDef WriteRegister(SPI_HandleTypeDef *hspi, uint8_t *pData, uint16_t Size);
 #endif /* __MAX7219_H__ */
