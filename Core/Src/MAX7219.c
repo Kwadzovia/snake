@@ -104,7 +104,7 @@ HAL_StatusTypeDef MAX7219_setSegment(MAX7219 * dev, uint8_t row, uint8_t value)
 {
   if(row > 0 && row <= 8)
   {
-    dev->rowMatrix[row] |= (1 << (value-1));
+    dev->rowMatrix[row-1] |= (1 << (value-1));
     uint8_t spiMessage[2] = {row,(1 << (value-1))};
     return WriteRegister(dev->spiHandle, spiMessage);
   }
