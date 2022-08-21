@@ -45,6 +45,7 @@ HAL_StatusTypeDef MAX7219_init(MAX7219 * dev, SPI_HandleTypeDef * spiHandle)
   MAX7219_disable_displayTest(dev);
   MAX7219_setIntensity(dev,MAX7219_DEFAULT_INTENSITY);
   MAX7219_setScanLimit(dev,MAX7219_DEFAULT_SCAN_LIMIT);
+  MAX7219_clearAll(dev);
   return MAX7219_wake(dev);
 }
 
@@ -104,7 +105,7 @@ HAL_StatusTypeDef MAX7219_setSegment(MAX7219 * dev, uint8_t row, uint8_t value)
 {
   if(row > 0 && row <= 8)
   {
-    dev->rowMatrix[row-1] |= (1 << (value-1));
+    // dev->rowMatrix[row-1] |= (1 << (value-1));
     uint8_t spiMessage[2] = {row,(1 << (value-1))};
     return WriteRegister(dev->spiHandle, spiMessage);
   }
@@ -114,12 +115,12 @@ HAL_StatusTypeDef MAX7219_setSegment(MAX7219 * dev, uint8_t row, uint8_t value)
   }
 }
 
-HAL_StatusTypeDef MAX7219_clearRow(MAX7219 * dev, uint8_t row)
+HAL_StatusTypeDef MAX7219_clearCol(MAX7219 * dev, uint8_t col)
 {
-  if(row > 0 && row <= 8)
+  if(col > 0 && col <= 8)
   {
-    dev->rowMatrix[row] = row;
-    uint8_t spiMessage[2] = {row,0x00};
+    // dev->rowMatrix[col] = col;
+    uint8_t spiMessage[2] = {col,0x00};
     return WriteRegister(dev->spiHandle, spiMessage);
   }
   else
@@ -128,16 +129,36 @@ HAL_StatusTypeDef MAX7219_clearRow(MAX7219 * dev, uint8_t row)
   }
 }
 
-HAL_StatusTypeDef MAX7219_setRow(MAX7219 * dev, uint8_t row)
+HAL_StatusTypeDef MAX7219_setCol(MAX7219 * dev, uint8_t col)
 {
-  if(row > 0 && row <= 8)
+  if(col > 0 && col <= 8)
   {
-    dev->rowMatrix[row] = row;
-    uint8_t spiMessage[2] = {row,0x00};
+    // dev->rowMatrix[col] = col;
+    uint8_t spiMessage[2] = {col,0xFF};
     return WriteRegister(dev->spiHandle, spiMessage);
   }
   else
   {
     return HAL_ERROR;
   }
+}
+
+HAL_StatusTypeDef MAX7219_clearAll(MAX7219 * dev)
+{
+    MAX7219_shutdown(dev);
+    for(int i = 1; i <= MAX7219_ALL_ROWS; i++)
+    {
+      MAX7219_clearCol(dev,i);
+    }
+    return MAX7219_wake(dev);
+}
+
+HAL_StatusTypeDef MAX7219_setAll(MAX7219 * dev)
+{
+    MAX7219_shutdown(dev);
+    for(int i = 1; i <= MAX7219_ALL_ROWS; i++)
+    {
+      MAX7219_setCol(dev,i);
+    }
+    return MAX7219_wake(dev);
 }

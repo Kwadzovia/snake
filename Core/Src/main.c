@@ -27,6 +27,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "MAX7219.h"
+#include "joystick.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -52,12 +53,69 @@
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-
+void updateWorld(joystick * joyHandle, MAX7219 * segmentHandle);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
+void updateWorld(joystick * joyHandle, MAX7219 * segmentHandle)
+{
+     // Update Input
+      joystick_read(joyHandle);
 
+      if(joyHandle->x_axis > 200)
+      {
+        joyHandle->direction = JOY_EAST;
+        if(joyHandle->column < 8)
+        {
+          MAX7219_setCol(segmentHandle, joyHandle->column);
+          joyHandle->column++;
+        }
+        else
+        {
+          MAX7219_setCol(segmentHandle, MAX7219_ALL_ROWS);
+        }
+      }
+      else if(joyHandle->x_axis < 50)
+      {
+        joyHandle->direction = JOY_WEST;
+        if(joyHandle->column > 1)
+        {
+          MAX7219_clearCol(segmentHandle, joyHandle->column);
+          joyHandle->column--;
+        }
+        else
+        {
+          MAX7219_clearCol(segmentHandle, 1);
+        }
+      }
+      else if(joyHandle->y_axis < 50) //Note: Joystick Y axis is flipped
+      {
+        joyHandle->direction = JOY_NORTH;
+        if(joyHandle->column < 8)
+        {
+          MAX7219_setCol(segmentHandle, joyHandle->column);
+          joyHandle->column++;
+        }
+        else
+        {
+          MAX7219_setCol(segmentHandle, MAX7219_ALL_ROWS);
+        }
+      }
+      else if(joyHandle->y_axis > 200)
+      {
+        joyHandle->direction = JOY_SOUTH;
+        if(joyHandle->column > 1)
+        {
+          MAX7219_clearCol(segmentHandle, joyHandle->column);
+          joyHandle->column--;
+        }
+        else
+        {
+          MAX7219_clearCol(segmentHandle, 1);
+        }
+      }
+}
 /* USER CODE END 0 */
 
 /**
@@ -93,23 +151,25 @@ int main(void)
   MX_USART2_UART_Init();
   MX_TIM2_Init();
   /* USER CODE BEGIN 2 */
-  MAX7219 segmentDev;
-  MAX7219_init(&segmentDev, &hspi2);
+  MAX7219 segHandle;
+  joystick joyHandle;
+
+  joystick_init(&joyHandle);
+  MAX7219_init(&segHandle, &hspi2);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-    for(int row = 1; row <= MAX7219_ALL_ROWS; row++)
-    {
-      for(int col = 1; col <= MAX7219_ALL_ROWS; col++)
-      {
-        MAX7219_setSegment(&segmentDev, row, col);
-        HAL_Delay(50);
-      }
-      MAX7219_clearRow(&segmentDev, row);
-    }
+ 
+      updateWorld(&joyHandle,&segHandle);
+      HAL_Delay(50);
+
+    // New Display Frame
+    // MAX7219_clearAll(&segmentDev);
+
 
 
     /* USER CODE END WHILE */

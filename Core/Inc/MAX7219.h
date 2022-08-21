@@ -6,7 +6,7 @@
 #include "stm32f4xx_hal_def.h"
 
 /* --------------------- Defines --------------------- */
-#define MAX7219_DEFAULT_INTENSITY 0x09
+#define MAX7219_DEFAULT_INTENSITY 0x01
 #define MAX7219_DEFAULT_SCAN_LIMIT 0x07
 
 #define MAX7219_ALL_ROWS 0x08
@@ -30,7 +30,9 @@ typedef struct
 
 HAL_StatusTypeDef MAX7219_init(MAX7219 * dev, SPI_HandleTypeDef * spiHandle);
 HAL_StatusTypeDef MAX7219_setSegment(MAX7219 * dev, uint8_t row, uint8_t value);
-HAL_StatusTypeDef MAX7219_clearRow(MAX7219 * dev, uint8_t row);
-HAL_StatusTypeDef MAX7219_setRow(MAX7219 * dev, uint8_t row);
+HAL_StatusTypeDef MAX7219_clearCol(MAX7219 * dev, uint8_t col);
+HAL_StatusTypeDef MAX7219_setCol(MAX7219 * dev, uint8_t col);
+HAL_StatusTypeDef MAX7219_clearAll(MAX7219 * dev);
+HAL_StatusTypeDef MAX7219_setAll(MAX7219 * dev);
 
 #endif /* __MAX7219_H__ */
