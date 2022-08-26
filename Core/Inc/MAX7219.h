@@ -4,6 +4,7 @@
 /* --------------------- Includes --------------------- */
 #include "spi.h"
 #include "stm32f4xx_hal_def.h"
+#include <stdint.h>
 
 /* --------------------- Defines --------------------- */
 #define MAX7219_DEFAULT_INTENSITY 0x01
@@ -31,8 +32,16 @@ typedef struct
 HAL_StatusTypeDef MAX7219_init(MAX7219 * dev, SPI_HandleTypeDef * spiHandle);
 HAL_StatusTypeDef MAX7219_setSegment(MAX7219 * dev, uint8_t row, uint8_t value);
 HAL_StatusTypeDef MAX7219_clearCol(MAX7219 * dev, uint8_t col);
-HAL_StatusTypeDef MAX7219_setCol(MAX7219 * dev, uint8_t col);
+HAL_StatusTypeDef MAX7219_setFullCol(MAX7219 * dev, uint8_t col);
+HAL_StatusTypeDef MAX7219_setCol(MAX7219 * dev, uint8_t col, uint8_t * pattern);
 HAL_StatusTypeDef MAX7219_clearAll(MAX7219 * dev);
 HAL_StatusTypeDef MAX7219_setAll(MAX7219 * dev);
+HAL_StatusTypeDef MAX7219_shutdown(MAX7219 * dev);
+HAL_StatusTypeDef MAX7219_wake(MAX7219 * dev);
+HAL_StatusTypeDef MAX7219_setIntensity(MAX7219 * dev, uint8_t intensity);
+HAL_StatusTypeDef MAX7219_setScanLimit(MAX7219 * dev, uint8_t scanLimit);
+HAL_StatusTypeDef MAX7219_enable_displayTest(MAX7219 * dev);
+HAL_StatusTypeDef MAX7219_disable_displayTest(MAX7219 * dev);
+HAL_StatusTypeDef MAX7219_blockSet(MAX7219 * dev, uint8_t blockArray[8]);
 
 #endif /* __MAX7219_H__ */

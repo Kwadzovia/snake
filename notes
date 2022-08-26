@@ -2,14 +2,14 @@ Requirements
 
 - Led Matrix Driver
     - Config Max7219
-        - Configure SPI
-        - Verify Device using a sanity register
-        - Initialize Device using Handle      
-    - Set Individual segment
+        d Configure SPI
+        x verify device using a sanity register... CANT, no readable register
+        d Initialize Device using Handle      
+    d Set Individual segment
     - Read Matrix
 
 - Joystick Driver
-    - Read Via Polling (Eventually can use timer interrupt)
-    - Find Threshold for directions
+    d Read Via Polling (Eventually can use timer interrupt)
+    d Find Threshold for directions
     
 - Snake Game Logic

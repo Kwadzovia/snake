@@ -28,6 +28,7 @@
 /* USER CODE BEGIN Includes */
 #include "MAX7219.h"
 #include "joystick.h"
+#include <stdint.h>
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -37,6 +38,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
+#define INITIAL_LENGTH 4
+#define MAX_LENGTH 64
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -66,54 +69,54 @@ void updateWorld(joystick * joyHandle, MAX7219 * segmentHandle)
       if(joyHandle->x_axis > 200)
       {
         joyHandle->direction = JOY_EAST;
-        if(joyHandle->column < 8)
-        {
-          MAX7219_setCol(segmentHandle, joyHandle->column);
-          joyHandle->column++;
-        }
-        else
-        {
-          MAX7219_setCol(segmentHandle, MAX7219_ALL_ROWS);
-        }
+        // if(joyHandle->column < 8)
+        // {
+        //   MAX7219_setFullCol(segmentHandle, joyHandle->column);
+        //   joyHandle->column++;
+        // }
+        // else
+        // {
+        //   MAX7219_setFullCol(segmentHandle, MAX7219_ALL_ROWS);
+        // }
       }
       else if(joyHandle->x_axis < 50)
       {
         joyHandle->direction = JOY_WEST;
-        if(joyHandle->column > 1)
-        {
-          MAX7219_clearCol(segmentHandle, joyHandle->column);
-          joyHandle->column--;
-        }
-        else
-        {
-          MAX7219_clearCol(segmentHandle, 1);
-        }
+        // if(joyHandle->column > 1)
+        // {
+        //   MAX7219_clearCol(segmentHandle, joyHandle->column);
+        //   joyHandle->column--;
+        // }
+        // else
+        // {
+        //   MAX7219_clearCol(segmentHandle, 1);
+        // }
       }
       else if(joyHandle->y_axis < 50) //Note: Joystick Y axis is flipped
       {
         joyHandle->direction = JOY_NORTH;
-        if(joyHandle->column < 8)
-        {
-          MAX7219_setCol(segmentHandle, joyHandle->column);
-          joyHandle->column++;
-        }
-        else
-        {
-          MAX7219_setCol(segmentHandle, MAX7219_ALL_ROWS);
-        }
+        // if(joyHandle->column < 8)
+        // {
+        //   MAX7219_setFullCol(segmentHandle, joyHandle->column);
+        //   joyHandle->column++;
+        // }
+        // else
+        // {
+        //   MAX7219_setFullCol(segmentHandle, MAX7219_ALL_ROWS);
+        // }
       }
       else if(joyHandle->y_axis > 200)
       {
         joyHandle->direction = JOY_SOUTH;
-        if(joyHandle->column > 1)
-        {
-          MAX7219_clearCol(segmentHandle, joyHandle->column);
-          joyHandle->column--;
-        }
-        else
-        {
-          MAX7219_clearCol(segmentHandle, 1);
-        }
+        // if(joyHandle->column > 1)
+        // {
+        //   MAX7219_clearCol(segmentHandle, joyHandle->column);
+        //   joyHandle->column--;
+        // }
+        // else
+        // {
+        //   MAX7219_clearCol(segmentHandle, 1);
+        // }
       }
 }
 /* USER CODE END 0 */
@@ -157,18 +160,82 @@ int main(void)
   joystick_init(&joyHandle);
   MAX7219_init(&segHandle, &hspi2);
 
+  typedef struct
+  {
+    uint8_t length;
+    uint8_t row[64];
+    uint8_t col[64];
+  } snakeStruct;
+
+  typedef struct
+  {
+    uint8_t prevFrame[8];
+    uint8_t currFrame[8];
+  } worldStruct;
+
+  worldStruct snakeWorld = {{0},{0}};
+  snakeWorld.currFrame[0] = 3 << 2;
+
+  snakeStruct snake = {INITIAL_LENGTH,{0},{0}};
+  snake.row[0] = 4;
+  snake.row[1] = 4;
+  snake.row[2] = 4;
+  snake.col[0] = 6;
+  snake.col[1] = 5;
+  snake.col[2] = 4;
+
+  uint8_t temp_counter = 0;
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
- 
+      temp_counter++;
+      if(temp_counter > 5)
+      {
+        temp_counter = 0;
+        snake.length++;
+      }
+      // Read Input
       updateWorld(&joyHandle,&segHandle);
-      HAL_Delay(50);
 
-    // New Display Frame
-    // MAX7219_clearAll(&segmentDev);
+      // New Display Frame
+      MAX7219_clearAll(&segHandle);
+
+      for(int i = 1; i < snake.length+1; i++)
+      {
+        snake.row[i] = snake.row[i-1];
+        snake.col[i] = snake.col[i-1];
+      }
+
+      if(joyHandle.direction == JOY_EAST)
+      {
+        snake.col[0] = (snake.col[0] == MAX7219_ALL_ROWS) ? 1 : snake.col[0]+1 ;
+      }
+      else if(joyHandle.direction == JOY_WEST)
+      {
+        snake.col[0] = (snake.col[0] == 1) ? MAX7219_ALL_ROWS : snake.col[0]-1 ;
+      }
+      else if(joyHandle.direction == JOY_NORTH)
+      {
+        snake.row[0] = (snake.row[0] == 1) ? MAX7219_ALL_ROWS : snake.row[0]-1 ;
+        
+      }
+      else if(joyHandle.direction == JOY_SOUTH)
+      {
+        snake.row[0] = (snake.row[0] == MAX7219_ALL_ROWS) ? 1 : snake.row[0]+1 ;
+      }
+      
+      for(int i = 0; i < snake.length; i++)
+      {
+        MAX7219_setSegment(&segHandle, snake.col[i],snake.row[i]);
+      }
+
+
+      HAL_Delay(300);
+
+
 
 
 
