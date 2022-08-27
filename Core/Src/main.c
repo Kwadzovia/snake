@@ -38,8 +38,8 @@
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define INITIAL_LENGTH 4
-#define MAX_LENGTH 64
+#define INITIAL_LENGTH 3
+#define MAX_LENGTH 16
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -135,7 +135,7 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-
+  
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -173,8 +173,9 @@ int main(void)
     uint8_t currFrame[8];
   } worldStruct;
 
-  worldStruct snakeWorld = {{0},{0}};
-  snakeWorld.currFrame[0] = 3 << 2;
+  // worldStruct snakeWorld = {{0},{0}};
+  // snakeWorld.currFrame[0] = 3 << 2;
+  uint8_t worldFrame[8];
 
   snakeStruct snake = {INITIAL_LENGTH,{0},{0}};
   snake.row[0] = 4;
@@ -184,6 +185,7 @@ int main(void)
   snake.col[1] = 5;
   snake.col[2] = 4;
 
+  joyHandle.direction = JOY_EAST;
   uint8_t temp_counter = 0;
   /* USER CODE END 2 */
 
@@ -192,18 +194,21 @@ int main(void)
   while (1)
   {
       temp_counter++;
-      if(temp_counter > 5)
+      if(temp_counter > 20)
       {
         temp_counter = 0;
-        snake.length++;
+        if(snake.length < MAX_LENGTH-1)
+        { 
+          snake.length++;
+        }
       }
       // Read Input
       updateWorld(&joyHandle,&segHandle);
 
       // New Display Frame
-      MAX7219_clearAll(&segHandle);
+      // MAX7219_clearAll(&segHandle);
 
-      for(int i = 1; i < snake.length+1; i++)
+      for(int i = snake.length+1; i > 0; i--)
       {
         snake.row[i] = snake.row[i-1];
         snake.col[i] = snake.col[i-1];
@@ -211,29 +216,34 @@ int main(void)
 
       if(joyHandle.direction == JOY_EAST)
       {
-        snake.col[0] = (snake.col[0] == MAX7219_ALL_ROWS) ? 1 : snake.col[0]+1 ;
+        snake.col[0] = (snake.col[0] == MAX7219_ALL_ROWS-1) ? 0 : snake.col[0]+1 ;
       }
       else if(joyHandle.direction == JOY_WEST)
       {
-        snake.col[0] = (snake.col[0] == 1) ? MAX7219_ALL_ROWS : snake.col[0]-1 ;
+        snake.col[0] = (snake.col[0] == 0) ? MAX7219_ALL_ROWS-1: snake.col[0]-1 ;
       }
       else if(joyHandle.direction == JOY_NORTH)
       {
-        snake.row[0] = (snake.row[0] == 1) ? MAX7219_ALL_ROWS : snake.row[0]-1 ;
-        
+        snake.row[0] = (snake.row[0] == 0) ? MAX7219_ALL_ROWS-1 : snake.row[0]-1 ;
       }
       else if(joyHandle.direction == JOY_SOUTH)
       {
-        snake.row[0] = (snake.row[0] == MAX7219_ALL_ROWS) ? 1 : snake.row[0]+1 ;
+        snake.row[0] = (snake.row[0] == MAX7219_ALL_ROWS-1) ? 0 : snake.row[0]+1 ;
       }
       
-      for(int i = 0; i < snake.length; i++)
+      for(int i = 0; i<8; i++)
       {
-        MAX7219_setSegment(&segHandle, snake.col[i],snake.row[i]);
+        worldFrame[i] = 0;
       }
 
+      for(int i = 0; i < snake.length; i++)
+      {
+        worldFrame[snake.col[i]] |= (1 << snake.row[i]);
+      }
 
-      HAL_Delay(300);
+      MAX7219_blockSet(&segHandle, worldFrame);
+
+      HAL_Delay(100);
 
 
 
