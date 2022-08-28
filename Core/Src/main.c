@@ -59,6 +59,24 @@
     uint8_t col[64];
   } snakeStruct;
 
+  uint8_t skull1[8] = { 0b00111100,
+                      0b00110011,
+                      0b11110011,
+                      0b01001111,
+                      0b11110011,
+                      0b00110011,
+                      0b00111100,
+                      0b00000000};
+
+  uint8_t skull2[8] = { 0b00000000,
+                      0b00111100,
+                      0b00110011,
+                      0b11110011,
+                      0b01001111,
+                      0b11110011,
+                      0b00110011,
+                      0b00111100};
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -67,7 +85,7 @@ void SystemClock_Config(void);
 void updateInput(joystick * joyHandle, MAX7219 * segmentHandle);
 uint8_t updateSnake(joystick * joyHandle, snakeStruct * snakeHandle);
 void updateWorld(uint8_t * row, uint8_t * col, snakeStruct * snakeHandle, uint8_t worldFrame[8]);
-void initWorld(uint8_t * row, uint8_t * col, joystick * joyHandle, snakeStruct * snakeHandle, uint8_t worldFrame[8]);
+void initWorld(uint8_t * row, uint8_t * col, MAX7219 * segHandle, joystick * joyHandle, snakeStruct * snakeHandle, uint8_t worldFrame[8]);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
@@ -157,7 +175,7 @@ void updateWorld(uint8_t * row, uint8_t * col, snakeStruct * snakeHandle, uint8_
       worldFrame[*col] |= 1 << *row;
 }
 
-void initWorld(uint8_t * row, uint8_t * col, joystick * joyHandle, snakeStruct * snakeHandle, uint8_t worldFrame[8])
+void initWorld(uint8_t * row, uint8_t * col, MAX7219 * segHandle, joystick * joyHandle, snakeStruct * snakeHandle, uint8_t worldFrame[8])
 {
   joyHandle->direction = JOY_EAST;
   for(int i = 0; i<8; i++)
@@ -174,7 +192,11 @@ void initWorld(uint8_t * row, uint8_t * col, joystick * joyHandle, snakeStruct *
   snakeHandle->col[1] = 5;
   snakeHandle->col[2] = 4;
 
-  //Give time for systick in first run
+  MAX7219_blockSet(segHandle, skull1);
+  HAL_Delay(100);
+  MAX7219_blockSet(segHandle, skull2);
+  HAL_Delay(100);
+  MAX7219_blockSet(segHandle, skull1);
   HAL_Delay(100);
 
   *row = (uint8_t) HAL_GetTick();
@@ -243,7 +265,7 @@ int main(void)
   uint8_t rand_row;
   uint8_t rand_col;
   
-  initWorld(&rand_row, &rand_col, &joyHandle, &snake, world);
+  initWorld(&rand_row, &rand_col, &segHandle, &joyHandle, &snake, world);
           
 
   /* USER CODE END 2 */
@@ -260,7 +282,7 @@ int main(void)
       if(updateSnake(&joyHandle,&snake))
       {
         //Hit Self, Restart
-        initWorld(&rand_row, &rand_col, &joyHandle, &snake, world);
+        initWorld(&rand_row, &rand_col, &segHandle, &joyHandle, &snake, world);
       }
 
       updateWorld(&rand_row,&rand_col,&snake,world);
