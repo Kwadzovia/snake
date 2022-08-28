@@ -29,6 +29,8 @@
       JOY_WEST
     } direction;
 
+    enum joystick_direction prev_direction;
+
   } joystick;
 
   void joystick_init(joystick * joyHandle);

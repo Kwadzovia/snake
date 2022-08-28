@@ -20,6 +20,7 @@
 #include "main.h"
 #include "adc.h"
 #include "spi.h"
+#include "stm32f4xx_hal.h"
 #include "tim.h"
 #include "usart.h"
 #include "gpio.h"
@@ -51,73 +52,137 @@
 
 /* USER CODE BEGIN PV */
 
+  typedef struct
+  {
+    uint8_t length;
+    uint8_t row[64];
+    uint8_t col[64];
+  } snakeStruct;
+
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
 void SystemClock_Config(void);
 /* USER CODE BEGIN PFP */
-void updateWorld(joystick * joyHandle, MAX7219 * segmentHandle);
+void updateInput(joystick * joyHandle, MAX7219 * segmentHandle);
+uint8_t updateSnake(joystick * joyHandle, snakeStruct * snakeHandle);
+void updateWorld(uint8_t * row, uint8_t * col, snakeStruct * snakeHandle, uint8_t worldFrame[8]);
+void initWorld(uint8_t * row, uint8_t * col, joystick * joyHandle, snakeStruct * snakeHandle, uint8_t worldFrame[8]);
 /* USER CODE END PFP */
 
 /* Private user code ---------------------------------------------------------*/
 /* USER CODE BEGIN 0 */
-void updateWorld(joystick * joyHandle, MAX7219 * segmentHandle)
+void updateInput(joystick * joyHandle, MAX7219 * segmentHandle)
 {
+      joyHandle->prev_direction = joyHandle->direction;
      // Update Input
       joystick_read(joyHandle);
 
-      if(joyHandle->x_axis > 200)
+      if(joyHandle->x_axis > 200 && joyHandle->prev_direction != JOY_WEST)
       {
         joyHandle->direction = JOY_EAST;
-        // if(joyHandle->column < 8)
-        // {
-        //   MAX7219_setFullCol(segmentHandle, joyHandle->column);
-        //   joyHandle->column++;
-        // }
-        // else
-        // {
-        //   MAX7219_setFullCol(segmentHandle, MAX7219_ALL_ROWS);
-        // }
       }
-      else if(joyHandle->x_axis < 50)
+      else if(joyHandle->x_axis < 50 && joyHandle->prev_direction != JOY_EAST)
       {
         joyHandle->direction = JOY_WEST;
-        // if(joyHandle->column > 1)
-        // {
-        //   MAX7219_clearCol(segmentHandle, joyHandle->column);
-        //   joyHandle->column--;
-        // }
-        // else
-        // {
-        //   MAX7219_clearCol(segmentHandle, 1);
-        // }
       }
-      else if(joyHandle->y_axis < 50) //Note: Joystick Y axis is flipped
+      else if(joyHandle->y_axis < 50 && joyHandle->prev_direction != JOY_SOUTH) //Note: Joystick Y axis is flipped
       {
         joyHandle->direction = JOY_NORTH;
-        // if(joyHandle->column < 8)
-        // {
-        //   MAX7219_setFullCol(segmentHandle, joyHandle->column);
-        //   joyHandle->column++;
-        // }
-        // else
-        // {
-        //   MAX7219_setFullCol(segmentHandle, MAX7219_ALL_ROWS);
-        // }
       }
-      else if(joyHandle->y_axis > 200)
+      else if(joyHandle->y_axis > 200 && joyHandle->prev_direction != JOY_NORTH)
       {
-        joyHandle->direction = JOY_SOUTH;
-        // if(joyHandle->column > 1)
-        // {
-        //   MAX7219_clearCol(segmentHandle, joyHandle->column);
-        //   joyHandle->column--;
-        // }
-        // else
-        // {
-        //   MAX7219_clearCol(segmentHandle, 1);
-        // }
+        joyHandle->direction = JOY_SOUTH ;
       }
+}
+
+uint8_t updateSnake(joystick * joyHandle, snakeStruct * snakeHandle)
+{
+
+      //Update snake body
+      for(int i = snakeHandle->length+1; i > 0; i--)
+      {
+        if(snakeHandle->row[i] == snakeHandle->row[0] && snakeHandle->col[i] == snakeHandle->col[0])
+        {
+          return 1;
+        }
+        snakeHandle->row[i] = snakeHandle->row[i-1];
+        snakeHandle->col[i] = snakeHandle->col[i-1];
+      }
+
+      //Update snake head
+      if(joyHandle->direction == JOY_EAST)
+      {
+        snakeHandle->col[0] = (snakeHandle->col[0] == MAX7219_ALL_ROWS-1) ? 0 : snakeHandle->col[0]+1 ;
+      }
+      else if(joyHandle->direction == JOY_WEST)
+      {
+        snakeHandle->col[0] = (snakeHandle->col[0] == 0) ? MAX7219_ALL_ROWS-1: snakeHandle->col[0]-1 ;
+      }
+      else if(joyHandle->direction == JOY_NORTH)
+      {
+        snakeHandle->row[0] = (snakeHandle->row[0] == 0) ? MAX7219_ALL_ROWS-1 : snakeHandle->row[0]-1 ;
+      }
+      else if(joyHandle->direction == JOY_SOUTH)
+      {
+        snakeHandle->row[0] = (snakeHandle->row[0] == MAX7219_ALL_ROWS-1) ? 0 : snakeHandle->row[0]+1 ;
+      }
+
+      return 0;
+}
+
+void updateWorld(uint8_t * row, uint8_t * col, snakeStruct * snakeHandle, uint8_t worldFrame[8])
+{
+        //Clear Snake from World     
+      for(int i = 0; i < 8; i++)
+      {
+        worldFrame[i] = 0;
+      }
+
+      if(snakeHandle->row[0] == *row && snakeHandle->col[0] == *col)
+      {
+        snakeHandle->length++;
+        
+        *row = (uint8_t) HAL_GetTick() >> 4;
+        *row = (uint8_t) *row % 7;
+        *col = (uint8_t) HAL_GetTick();
+        *col = (uint8_t) *col % 7;
+      }
+
+      for(int i = 0; i < snakeHandle->length; i++)
+      {
+        worldFrame[snakeHandle->col[i]] |= (1 << snakeHandle->row[i]);
+      }
+      
+      worldFrame[*col] |= 1 << *row;
+}
+
+void initWorld(uint8_t * row, uint8_t * col, joystick * joyHandle, snakeStruct * snakeHandle, uint8_t worldFrame[8])
+{
+  joyHandle->direction = JOY_EAST;
+  for(int i = 0; i<8; i++)
+  {
+    worldFrame[i] = 0;
+  }
+
+  snakeHandle->length = INITIAL_LENGTH;
+
+  snakeHandle->row[0] = 4;
+  snakeHandle->row[1] = 4;
+  snakeHandle->row[2] = 4;
+  snakeHandle->col[0] = 6;
+  snakeHandle->col[1] = 5;
+  snakeHandle->col[2] = 4;
+
+  //Give time for systick in first run
+  HAL_Delay(100);
+
+  *row = (uint8_t) HAL_GetTick();
+  *row = (uint8_t) *row % 7;
+  
+  *col = (uint8_t) HAL_GetTick() >> 1;
+  *col = (uint8_t) *col % 7;
+
 }
 /* USER CODE END 0 */
 
@@ -135,7 +200,7 @@ int main(void)
 
   /* Reset of all peripherals, Initializes the Flash interface and the Systick. */
   HAL_Init();
-  
+
   /* USER CODE BEGIN Init */
 
   /* USER CODE END Init */
@@ -157,25 +222,13 @@ int main(void)
   MAX7219 segHandle;
   joystick joyHandle;
 
+  // ADC_ChannelConfTypeDef sConfig = {0};
+  // sConfig.SamplingTime = ADC_SAMPLETIME_3CYCLES;
+
   joystick_init(&joyHandle);
   MAX7219_init(&segHandle, &hspi2);
 
-  typedef struct
-  {
-    uint8_t length;
-    uint8_t row[64];
-    uint8_t col[64];
-  } snakeStruct;
-
-  typedef struct
-  {
-    uint8_t prevFrame[8];
-    uint8_t currFrame[8];
-  } worldStruct;
-
-  // worldStruct snakeWorld = {{0},{0}};
-  // snakeWorld.currFrame[0] = 3 << 2;
-  uint8_t worldFrame[8];
+  uint8_t world[8];
 
   snakeStruct snake = {INITIAL_LENGTH,{0},{0}};
   snake.row[0] = 4;
@@ -186,68 +239,35 @@ int main(void)
   snake.col[2] = 4;
 
   joyHandle.direction = JOY_EAST;
-  uint8_t temp_counter = 0;
+
+  uint8_t rand_row;
+  uint8_t rand_col;
+  
+  initWorld(&rand_row, &rand_col, &joyHandle, &snake, world);
+          
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
   /* USER CODE BEGIN WHILE */
   while (1)
   {
-      temp_counter++;
-      if(temp_counter > 20)
-      {
-        temp_counter = 0;
-        if(snake.length < MAX_LENGTH-1)
-        { 
-          snake.length++;
-        }
-      }
+
       // Read Input
-      updateWorld(&joyHandle,&segHandle);
+      updateInput(&joyHandle,&segHandle);
 
-      // New Display Frame
-      // MAX7219_clearAll(&segHandle);
-
-      for(int i = snake.length+1; i > 0; i--)
+      //Update Snake Position
+      if(updateSnake(&joyHandle,&snake))
       {
-        snake.row[i] = snake.row[i-1];
-        snake.col[i] = snake.col[i-1];
+        //Hit Self, Restart
+        initWorld(&rand_row, &rand_col, &joyHandle, &snake, world);
       }
 
-      if(joyHandle.direction == JOY_EAST)
-      {
-        snake.col[0] = (snake.col[0] == MAX7219_ALL_ROWS-1) ? 0 : snake.col[0]+1 ;
-      }
-      else if(joyHandle.direction == JOY_WEST)
-      {
-        snake.col[0] = (snake.col[0] == 0) ? MAX7219_ALL_ROWS-1: snake.col[0]-1 ;
-      }
-      else if(joyHandle.direction == JOY_NORTH)
-      {
-        snake.row[0] = (snake.row[0] == 0) ? MAX7219_ALL_ROWS-1 : snake.row[0]-1 ;
-      }
-      else if(joyHandle.direction == JOY_SOUTH)
-      {
-        snake.row[0] = (snake.row[0] == MAX7219_ALL_ROWS-1) ? 0 : snake.row[0]+1 ;
-      }
-      
-      for(int i = 0; i<8; i++)
-      {
-        worldFrame[i] = 0;
-      }
+      updateWorld(&rand_row,&rand_col,&snake,world);
 
-      for(int i = 0; i < snake.length; i++)
-      {
-        worldFrame[snake.col[i]] |= (1 << snake.row[i]);
-      }
-
-      MAX7219_blockSet(&segHandle, worldFrame);
-
+      //Write World to Display
+      MAX7219_blockSet(&segHandle, world);
       HAL_Delay(100);
-
-
-
-
 
     /* USER CODE END WHILE */
 
